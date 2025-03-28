@@ -75,7 +75,7 @@ def get_aircraft_type(registration_number, method = 1, debug=False):
     formatted_registration_number = format_registration_number(registration_number)
 
     # Read the CSV file and process it
-    with open('Excel_Files/template/register_BAZL_aircraft.csv', 'r', encoding='utf-16') as csvfile:
+    with open('Excel/template/register_BAZL_aircraft.csv', 'r', encoding='utf-16') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=';')
         
         # Process each row

@@ -1,5 +1,6 @@
 # Library of self-defined functions
 import traffic
+import joblib
 import random
 import logging
 import numpy as np
@@ -614,9 +615,7 @@ def find_airdrome_circuits(flight: Flight, airport: str = None, scale: float = 1
     if airport == None: airport = flight.landing_airport()
 
     ## LOAD MACHINE LEARNING MODEL ##
-    #model = load_model('ML_Lommis_Models/LSTM/advanced_model.keras')
-    import joblib
-    model = joblib.load("ML_Lommis_Models/LogisticRegression/advanced_model_lommis_rf.pkl")
+    model = joblib.load("ML/Models/RandomForest/advanced_model_lommis_rf.pkl")
 
     extreme1 = PointMixin()
     extreme2 = PointMixin()
