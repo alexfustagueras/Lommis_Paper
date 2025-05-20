@@ -336,8 +336,10 @@ def process_flights_segments(flight: Flight, x1: list, x2: list, x3: list, x4: l
             if debug: print(f"Skipping segment {i} due to None")
             continue
         
-        start_index = flight.data.index.get_loc(flight_segment.data.index[0])
-        end_index = flight.data.index.get_loc(flight_segment.data.index[-1]) + 1
+        #start_index = flight.data.index.get_loc(flight_segment.data.index[0])
+        #end_index = flight.data.index.get_loc(flight_segment.data.index[-1]) + 1
+        start_index = flight.data.index.get_indexer([flight_segment.data.index[0]])[0]
+        end_index   = flight.data.index.get_indexer([flight_segment.data.index[-1]])[0] + 1
 
         if debug: print(f"FLIGHT SEGMENT {ikeep} | Start Index : {start_index} | End Index : {end_index} ")
 
@@ -489,7 +491,7 @@ def plot_flight_segments(results: np.ndarray, airport: str, num_segments: int, p
 
 def create_runway_area(airport: str, rwy: str, scale: float = 1.0, debug: bool = False) -> list:
     """
-    Creates a rectangle area around an specified runway of an airport.
+    Creates a rectangle area around an specified runway of an airport
 
     Parameters
     ----------
@@ -902,68 +904,70 @@ def analyze_flight(flight: Flight, airport: str, flight_data: list, date: list, 
 
     # DEPARTURE IDENTIFICATION (D) #
     if takeoff_lszt:
-        starting_flight = flight.query(f"vertical_rate > {flight.data.vertical_rate.iloc[0]}").first('1 min')
+        climb_segment = flight.query(f"vertical_rate > {flight.data.vertical_rate.iloc[0]}")
+        if climb_segment is not None and not climb_segment.data.empty:
+            starting_flight = climb_segment.first('1 min')
 
-        d_24 = starting_flight.closest_point(extreme1)
-        d_06 = starting_flight.closest_point(extreme2)
+            d_24 = starting_flight.closest_point(extreme1)
+            d_06 = starting_flight.closest_point(extreme2)
 
-        if d_06.timestamp > d_24.timestamp:
-            rwy_takeoff = '24'
-            
-            departure_time = d_06.timestamp
-        else:
-            rwy_takeoff = '06'
+            if d_06.timestamp > d_24.timestamp:
+                rwy_takeoff = '24'
+                
+                departure_time = d_06.timestamp
+            else:
+                rwy_takeoff = '06'
 
-            departure_time = d_24.timestamp
+                departure_time = d_24.timestamp
 
-        # Compute route_takeoff using entry direction detection
-        dist = flight.distance(center)
-        small_dist = dist.data[dist.data.distance.between(radius.nm - 0.1, radius.nm + 0.1)]
-        small_dist.sort_values(by="timestamp")
+            # Compute route_takeoff using entry direction detection
+            dist = flight.distance(center)
+            small_dist = dist.data[dist.data.distance.between(radius.nm - 0.1, radius.nm + 0.1)]
+            small_dist.sort_values(by="timestamp")
 
-        if len(small_dist) > 0:
-            small_dist = small_dist.copy()
-            small_dist["time_diff"] = small_dist["timestamp"].diff().dt.total_seconds()
-            small_dist["crossing_id"] = (small_dist["time_diff"] > 120).cumsum()
+            if len(small_dist) > 0:
+                small_dist = small_dist.copy()
+                small_dist["time_diff"] = small_dist["timestamp"].diff().dt.total_seconds()
+                small_dist["crossing_id"] = (small_dist["time_diff"] > 120).cumsum()
 
-            crossing_events = small_dist.groupby("crossing_id").agg(
-                entry_timestamp=("timestamp", "first"),
-                entry_latitude=("latitude", "first"),
-                entry_longitude=("longitude", "first"),
-            ).reset_index(drop=True)
+                crossing_events = small_dist.groupby("crossing_id").agg(
+                    entry_timestamp=("timestamp", "first"),
+                    entry_latitude=("latitude", "first"),
+                    entry_longitude=("longitude", "first"),
+                ).reset_index(drop=True)
 
-            # Determine route_takeoff direction
-            if len(crossing_events) > 0:
+                # Determine route_takeoff direction
+                if len(crossing_events) > 0:
+                    route_takeoff = determine_direction(
+                        crossing_events.iloc[0]["entry_latitude"], 
+                        crossing_events.iloc[0]["entry_longitude"], 
+                        center.latitude, 
+                        center.longitude)
+            else:
                 route_takeoff = determine_direction(
-                    crossing_events.iloc[0]["entry_latitude"], 
-                    crossing_events.iloc[0]["entry_longitude"], 
+                    starting_flight.data.latitude.iloc[-1],
+                    starting_flight.data.longitude.iloc[-1],
                     center.latitude, 
-                    center.longitude)
-        else:
-            route_takeoff = determine_direction(
-                starting_flight.data.latitude.iloc[-1],
-                starting_flight.data.longitude.iloc[-1],
-                center.latitude, 
-                center.longitude
+                    center.longitude
+                )
+
+            if landing_lszt:
+                ori_dest = "LSZT"            
+            else:
+                ori_dest = "LSZZ"
+            
+            flight_data.append(
+                ["LSZT", date[0], date[1], date[2], departure_time.strftime("%H%M"), "D", 
+                4, aircraft_type, flight.data.callsign.iloc[0], rwy_takeoff, 1, 0, 0, ori_dest, route_takeoff] 
             )
 
-        if landing_lszt:
-            ori_dest = "LSZT"            
-        else:
-            ori_dest = "LSZZ"
-        
-        flight_data.append(
-            ["LSZT", date[0], date[1], date[2], departure_time.strftime("%H%M"), "D", 
-            4, aircraft_type, flight.data.callsign.iloc[0], rwy_takeoff, 1, 0, 0, ori_dest, route_takeoff] 
-        )
-
-        if debug:
-            print("------------------------------------------------")
-            print(f"START FLIGHT: {flight.data.timestamp.iloc[0]}")
-            print(f"DEPARTURE: {departure_time}")
-            print(f"RUNWAY: {rwy_takeoff}")
-            print(f"ROUTE: {route_takeoff}")
-            print("------------------------------------------------")
+            if debug:
+                print("------------------------------------------------")
+                print(f"START FLIGHT: {flight.data.timestamp.iloc[0]}")
+                print(f"DEPARTURE: {departure_time}")
+                print(f"RUNWAY: {rwy_takeoff}")
+                print(f"ROUTE: {route_takeoff}")
+                print("------------------------------------------------")
 
     # VOLTE IDENTIFICATION (V) #
     ncircuits, indexes = find_aerodrome_circuits(flight, airport, rwy, rwy_scale, debug=debug, plot=False) 
@@ -1031,7 +1035,8 @@ def analyze_flight(flight: Flight, airport: str, flight_data: list, date: list, 
 
             # Determine route_landing direction
             if len(crossing_events) > 0:
-                if takeoff_lszt: pos_landing = 1
+                if takeoff_lszt and len(crossing_events) > 1:
+                    pos_landing = 1
                 else: pos_landing = 0
 
             route_landing = determine_direction(
