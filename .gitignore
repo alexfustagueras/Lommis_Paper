@@ -4,12 +4,14 @@ __pycache__/
 *.so
 *.egg
 *.egg-info/
+*.parquet
 
 # Jupyter
 .ipynb_checkpoints/
 
 # VS Code
 .vscode/
+Flights/
 
 # Virtual environment
 .venv/
