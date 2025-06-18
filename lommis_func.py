@@ -907,18 +907,26 @@ def analyze_flight(flight: Flight, airport: str, flight_data: list, date: list, 
         climb_segment = flight.query(f"vertical_rate > {flight.data.vertical_rate.iloc[0]}")
         if climb_segment is not None and not climb_segment.data.empty:
             starting_flight = climb_segment.first('1 min')
+    
+            d_1 = starting_flight.distance(extreme1)
+            t_1 = d_1.data.distance.idxmin()
+            r_1 = d_1.data.loc[t_1]
+            
+            d_2 = starting_flight.distance(extreme2)
+            t_2 = d_2.data.distance.idxmin()
+            r_2 = d_2.data.loc[t_2]
 
-            d_24 = starting_flight.closest_point(extreme1)
-            d_06 = starting_flight.closest_point(extreme2)
+            #d_24 = starting_flight.distance(extreme1).data.distance
+            #d_06 = starting_flight.closest_point(extreme2)
 
-            if d_06.timestamp > d_24.timestamp:
-                rwy_takeoff = '24'
+            if r_1.timestamp > r_2.timestamp:
+                rwy_takeoff = extreme1.name
                 
-                departure_time = d_06.timestamp
+                departure_time = r_1.timestamp
             else:
-                rwy_takeoff = '06'
+                rwy_takeoff = extreme2.name
 
-                departure_time = d_24.timestamp
+                departure_time = r_2.timestamp
 
             # Compute route_takeoff using entry direction detection
             dist = flight.distance(center)
@@ -967,6 +975,10 @@ def analyze_flight(flight: Flight, airport: str, flight_data: list, date: list, 
                 print(f"DEPARTURE: {departure_time}")
                 print(f"RUNWAY: {rwy_takeoff}")
                 print(f"ROUTE: {route_takeoff}")
+                print(f"TIME Threshold {extreme1.name} : {r_1.timestamp}")
+                print(f"DISTANCE Threshold {extreme1.name}: {r_1.distance}")
+                print(f"TIME Threshold {extreme2.name} : {r_2.timestamp}")
+                print(f"DISTANCE Threshold {extreme2.name} : {r_2.distance}")
                 print("------------------------------------------------")
 
     # VOLTE IDENTIFICATION (V) #
@@ -984,16 +996,23 @@ def analyze_flight(flight: Flight, airport: str, flight_data: list, date: list, 
         end_volte = flight.data.timestamp.iloc[indexes[0][1]]
         volte_flight = flight.between(start_volte, end_volte)
 
-        if volte_flight is not None:
-            d_24 = volte_flight.closest_point(extreme1)
-            d_06 = volte_flight.closest_point(extreme2)
+        if volte_flight is not None:            
+            d_1 = volte_flight.distance(extreme1)
+            t_1 = d_1.data.distance.idxmin()
+            r_1 = d_1.data.loc[t_1]
+            
+            d_2 = volte_flight.distance(extreme2)
+            t_2 = d_2.data.distance.idxmin()
+            r_2 = d_2.data.loc[t_2]
 
-            if d_06.timestamp > d_24.timestamp:
-                rwy_volte = '24'
-                route_volte = 'NO'
+            if r_1.timestamp > r_2.timestamp:
+                rwy_volte = extreme1.name
+                route_volte = ''
+                
+                departure_time = r_1.timestamp
             else:
-                rwy_volte = '06'
-                route_volte = 'SW'
+                rwy_volte = extreme2.name
+                route_volte = ''               
 
             flight_data.append(
                 ["LSZT", date[0], date[1], date[2], start_volte.strftime("%H%M"), "V", 
@@ -1005,17 +1024,22 @@ def analyze_flight(flight: Flight, airport: str, flight_data: list, date: list, 
         last_change_index = flight.data.iloc[::-1].vertical_rate.ne(flight.data.vertical_rate.iloc[-1]).idxmax()
         ending_flight = flight.query(f"index <= {last_change_index}").last('1 min')
 
-        d_24 = ending_flight.closest_point(extreme1)
-        d_06 = ending_flight.closest_point(extreme2)    
+        d_1 = ending_flight.distance(extreme1)
+        t_1 = d_1.data.distance.idxmin()
+        r_1 = d_1.data.loc[t_1]
+        
+        d_2 = ending_flight.distance(extreme2)
+        t_2 = d_2.data.distance.idxmin()
+        r_2 = d_2.data.loc[t_2]
 
-        if d_06.timestamp < d_24.timestamp:
-            rwy_landing = '06'
-
-            landing_time = d_06.timestamp
+        if r_1.timestamp > r_2.timestamp:
+            rwy_landing = extreme1.name
+            
+            landing_time = r_1.timestamp
         else:
-            rwy_landing = '24'
+            rwy_landing = extreme2.name
 
-            landing_time = d_24.timestamp
+            landing_time = r_2.timestamp
     
         # Compute route_landing using entry direction detection
         dist = flight.distance(center)
@@ -1069,4 +1093,8 @@ def analyze_flight(flight: Flight, airport: str, flight_data: list, date: list, 
             print(f"END FLIGHT: {flight.data.timestamp.iloc[-1]}")
             print(f"RUNWAY: {rwy_landing}")
             print(f"ROUTE: {route_landing}")
+            print(f"TIME Threshold {extreme1.name} : {r_1.timestamp}")
+            print(f"DISTANCE Threshold {extreme1.name}: {r_1.distance}")
+            print(f"TIME Threshold {extreme2.name} : {r_2.timestamp}")
+            print(f"DISTANCE Threshold {extreme2.name} : {r_2.distance}")
             print("------------------------------------------------")
