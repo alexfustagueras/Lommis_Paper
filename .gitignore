@@ -13,6 +13,7 @@ __pycache__/
 *.json
 *.pdf
 *.zip
+*.tex
 
 # Jupyter
 .ipynb_checkpoints/
