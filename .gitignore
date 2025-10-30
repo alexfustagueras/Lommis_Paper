@@ -12,6 +12,7 @@ __pycache__/
 *.log
 *.json
 *.pdf
+*.zip
 
 # Jupyter
 .ipynb_checkpoints/
@@ -21,7 +22,7 @@ __pycache__/
 Flights/
 Statistics/
 Pictures/
-ML/
+model/ML/
 Excel/
 
 # Virtual environment

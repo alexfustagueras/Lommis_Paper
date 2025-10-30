@@ -1,18 +1,4 @@
-# Aerodrome Movement Monitoring Using ADS-B Data: 
-A Case Study at Lommis Airfield
-
-### Presented at: 13th OpenSky Symposium
-
-**Authors:**  
-- Alex Fustagueras ([ORCID 0009-0005-7063-6295](https://orcid.org/0009-0005-7063-6295))  
-  - *Centre for Aviation, Zurich University of Applied Sciences, Winterthur, Switzerland*  
-  - <alex.fustagueras@zhaw.ch>  
-- Manuel Waltert ([ORCID 0000-0001-7649-6581](https://orcid.org/0000-0001-7649-6581))  
-  - *Centre for Aviation, Zurich University of Applied Sciences, Winterthur, Switzerland*
-
----
-
-## Project Overview
+# Aerodrome Movement Monitoring Using ADS-B Data: A Case Study at Lommis Airfield
 
 This repository provides the full workflow and code for the OpenSky Symposium paper titled:
 
@@ -54,3 +40,12 @@ LICENSE                         # License file
 
 - **Data Analysis & Visualization**
   - Summary dashboards and comparison analyses are under `data/`.
+
+---
+
+**Authors:**  
+- Alex Fustagueras ([ORCID 0009-0005-7063-6295](https://orcid.org/0009-0005-7063-6295))  
+  - *Centre for Aviation, Zurich University of Applied Sciences, Winterthur, Switzerland*  
+  - <alex.fustagueras@zhaw.ch>  
+- Manuel Waltert ([ORCID 0000-0001-7649-6581](https://orcid.org/0000-0001-7649-6581))  
+  - *Centre for Aviation, Zurich University of Applied Sciences, Winterthur, Switzerland*

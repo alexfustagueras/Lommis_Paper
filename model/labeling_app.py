@@ -12,6 +12,11 @@ from plotly.subplots import make_subplots
 import logging
 from pathlib import Path
 import io
+import sys
+# Add project root to sys.path so 'lommis_func.py' can always be imported
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 # Imports from traffic library
 from traffic.core import Traffic, Flight
@@ -23,18 +28,24 @@ from scipy.ndimage import gaussian_filter1d
 # Suppress warnings from the traffic library
 logging.getLogger("traffic").setLevel(logging.ERROR)
 
+# --- Project Paths (root-anchored) ---
+# REPO_ROOT = Path(__file__).resolve().parents[1] # This line is now redundant as it's defined above
+DATA_DIR = REPO_ROOT / "Flights"
+OUTPUT_DIR = REPO_ROOT
+
 # --- Utility Functions ---
 @st.cache_data
-def load_all_flights(base_path="Statistics/"):
+def load_all_flights(base_path=str(DATA_DIR)):
     """
     Recursively finds and loads all flight data from a specified base path
     and returns a single Traffic object.
     """
     flight_objects = []
+    base_path = str(base_path)
     patterns = [
-        os.path.join(base_path, '*.parquet'),
-        os.path.join(base_path, 'Others', '*.parquet'),
-        os.path.join(base_path, 'Others', 'PH_AXB', '*.parquet'),
+        str(Path(base_path) / '*.parquet'),
+        str(Path(base_path) / 'Others' / '*.parquet'),
+        str(Path(base_path) / 'Others' / 'PH_AXB' / '*.parquet'),
     ]
     parquet_files = []
     for pat in patterns:
@@ -64,7 +75,7 @@ def load_all_flights(base_path="Statistics/"):
 
     return list(traff_set)
 
-def load_flights_from_consolidated(parquet_path: str = 'Flights/flights_to_label.parquet'):
+def load_flights_from_consolidated(parquet_path: str = str(DATA_DIR / 'flights_to_label.parquet')):
     """
     Load flights from a consolidated parquet built from Flights/to_label/*.pkl.
     Expects columns: flight_pickle (bytes). Optionally: airport_code, rwy, unique_flight_id.
@@ -476,7 +487,7 @@ def main():
     st.markdown("---")
     with st.sidebar:
         st.markdown("### Data source")
-        cons_default = st.session_state.get('consolidated_parquet_path', 'Flights/flights_to_label.parquet')
+        cons_default = st.session_state.get('consolidated_parquet_path', str(DATA_DIR / 'flights_to_label.parquet'))
         cons_path = st.text_input("Consolidated parquet path", value=cons_default, help="Path to Flights/flights_to_label.parquet or a sample like Flights/flights_to_label_5.parquet")
         st.session_state.consolidated_parquet_path = cons_path
 
@@ -662,7 +673,7 @@ def main():
     if 'segments' not in st.session_state:
         with st.spinner("Loading and processing flights (consolidated if available)..."):
 
-            all_flights = load_flights_from_consolidated(st.session_state.get('consolidated_parquet_path', 'Flights/flights_to_label.parquet'))
+            all_flights = load_flights_from_consolidated(st.session_state.get('consolidated_parquet_path', str(DATA_DIR / 'flights_to_label.parquet')))
             if not all_flights:
                 all_flights = load_all_flights()
                 st.info(f"Loaded {len(all_flights)} flights from Statistics folder.")
@@ -707,13 +718,13 @@ def main():
                 df_labeled = df_all[df_all['label'].notna()].copy()
             else:
                 df_labeled = df_all
-            df_labeled.to_parquet("EMERGENCY_SAVE.parquet", index=False)
-            st.success(f"Saved {len(df_labeled)} labeled rows to EMERGENCY_SAVE.parquet")
+            df_labeled.to_parquet(str(OUTPUT_DIR / "EMERGENCY_SAVE.parquet"), index=False)
+            st.success(f"Saved {len(df_labeled)} labeled rows to {OUTPUT_DIR / 'EMERGENCY_SAVE.parquet'}")
     with c2:
         if st.button("🧾 Save FULL review state → EMERGENCY_SAVE_FULL.parquet"):
             df_full = pd.DataFrame(st.session_state.get('labeled_data_list', []))
-            df_full.to_parquet("EMERGENCY_SAVE_FULL.parquet", index=False)
-            st.success(f"Saved full state with {len(df_full)} rows to EMERGENCY_SAVE_FULL.parquet")
+            df_full.to_parquet(str(OUTPUT_DIR / "EMERGENCY_SAVE_FULL.parquet"), index=False)
+            st.success(f"Saved full state with {len(df_full)} rows to {OUTPUT_DIR / 'EMERGENCY_SAVE_FULL.parquet'}")
 
     # --- Jump / edit controls ---
     with st.expander("Jump to / Edit a segment", expanded=False):
