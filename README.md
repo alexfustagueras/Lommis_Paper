@@ -6,6 +6,6 @@ It combines several tools to process, analyze and visualize ADS-B traffic data, 
 
 * Custom functions written in **lommis_func.py**
 * The built-in features of traffic library
-* Some Machine Learning models trained specifically for this task
+* Some Machine Learning models trained specifically for the identification of repeated traffic circuits
 
 The main notebook is **main.ipynb**, which goes through the full workflow — from loading and cleaning the data to detecting events and visualizing the results.
