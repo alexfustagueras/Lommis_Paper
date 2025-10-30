@@ -1,5 +1,4 @@
 import streamlit as st
-# Set Streamlit page to wide layout
 st.set_page_config(layout="wide")
 import streamlit as st
 import pandas as pd
@@ -32,7 +31,6 @@ def load_all_flights(base_path="Statistics/"):
     and returns a single Traffic object.
     """
     flight_objects = []
-    # Match the user's working notebook patterns explicitly
     patterns = [
         os.path.join(base_path, '*.parquet'),
         os.path.join(base_path, 'Others', '*.parquet'),
@@ -152,13 +150,13 @@ def process_data_for_labeling(_flight_list):
                 except Exception as e:
                     print(f"Error processing landing airport {inferred_landing} for flight {unique_flight_id or idx}: {e}")
             
-            # Try takeoff airport
+            # try takeoff airport
             if inferred_takeoff and inferred_takeoff != inferred_landing:
                 try:
                     apt_takeoff = airports[inferred_takeoff]
                     rwy_takeoff, scale_takeoff = detect_runway(flight, apt_takeoff)
                     if rwy_takeoff != -1:
-                        # Count aligned segments at this airport
+                        # count aligned segments at this airport
                         segments_takeoff = aligned_over_runway(flight, apt_takeoff, rwy_takeoff, scale=scale_takeoff)
                         n_segments_takeoff = len(segments_takeoff) if segments_takeoff else 0
                         candidates.append({
@@ -198,7 +196,7 @@ def process_data_for_labeling(_flight_list):
             except Exception:
                 pass
 
-            # --- 1. COMPUTE FEATURES ---
+            # --- COMPUTE FEATURES ---
             sigma = 1.0
             x1 = gaussian_filter1d(np.array( flight.distance(center).data[["distance"]] ).flatten(), sigma=sigma)
             x2 = gaussian_filter1d(np.array(compute_alignment_angle(extreme1.latitude, extreme1.longitude, extreme2.latitude, extreme2.longitude, 
@@ -211,7 +209,7 @@ def process_data_for_labeling(_flight_list):
                 print(f"Skipping flight {unique_flight_id or idx}: unwrapped track is None")
                 continue
             
-            # --- 2. IDENTIFY ALIGNED OVER RUNWAY SEGMENTS ---
+            # --- IDENTIFY ALIGNED OVER RUNWAY SEGMENTS ---
             if airport_code_used in ["LIPQ", "EGPK", "EBLG"]:
                 scale = max(scale_used, 1.2)
             elif flight.callsign in ["HBETG"]:
@@ -226,10 +224,10 @@ def process_data_for_labeling(_flight_list):
                 print("No aligned over-runway segments detected")
                 continue
 
-            # # --- 3. PROCESS ALIGNED OVER RUNWAY SEGMENTS ---
+            # # --- PROCESS ALIGNED OVER RUNWAY SEGMENTS ---
             results = process_flights_segments(flight, x1, x2, x3, x4, flight_segments, debug=False)
 
-            # # --- 4. PREPARE FLIGHT SEGMENTS (RESAMPLING) ---
+            # # --- PREPARE FLIGHT SEGMENTS (RESAMPLING) ---
             ikeep = 0
             for (x1_seg, x2_seg, x3_seg, x4_seg, timestamps, flight_segment, index) in results:
                 segment_length = len(x1_seg)
@@ -241,7 +239,7 @@ def process_data_for_labeling(_flight_list):
                     phases_seg = np.array(['NA'] * segment_length)
 
                 if segment_length > fixed_length:
-                    # Downsample by slicing
+                    # downsample by slicing
                     step = segment_length / fixed_length
                     indices = (np.arange(fixed_length) * step).astype(int)
                     x1_seg = x1_seg[indices]
@@ -342,7 +340,6 @@ def plot_single_segment(result, airport, title="Flight Segment"):
 
     # Time series plots (handle plain numpy arrays / lists)
     try:
-        # Add phase background rectangles per contiguous run (like lommis_func)
         phase_colors = {
             'CLIMB': 'rgba(192,255,192,0.5)',
             'DESCENT': 'rgba(255,214,214,0.5)',
@@ -380,7 +377,6 @@ def plot_single_segment(result, airport, title="Flight Segment"):
         fig.add_trace(go.Scatter(x=timestamps, y=result[2], mode='lines', name='Geo Altitude', showlegend=False), row=1, col=3)
         fig.add_trace(go.Scatter(x=timestamps, y=result[3], mode='lines', name='Unwrapped Track', showlegend=False), row=1, col=4)
     except Exception:
-        # fallback: plot against sample index
         idx = list(range(len(result[0])))
         fig.add_trace(go.Scatter(x=idx, y=result[0], mode='lines', name='Distance'), row=1, col=1)
         fig.add_trace(go.Scatter(x=idx, y=result[1], mode='lines', name='RLAA'), row=1, col=2)
@@ -463,13 +459,11 @@ def get_labeled_parquet_bytes(labeled_list):
             df = pd.DataFrame(labeled_list)
 
         buffer = io.BytesIO()
-        # Use parquet format
         df.to_parquet(buffer, index=False)
         buffer.seek(0)
         return buffer.read()
     except Exception as e:
         logging.exception(e)
-        # Fallback: return empty parquet bytes
         buffer = io.BytesIO()
         pd.DataFrame(columns=["flight_id", "label", "features"]).to_parquet(buffer, index=False)
         buffer.seek(0)
@@ -480,13 +474,12 @@ def main():
     st.title("🛩️ Flight Segment Labeling App")
     st.markdown("Use this app to manually label flight segments as 'Traffic Circuit' or 'Not a Circuit'.")
     st.markdown("---")
-    # Sidebar: choose consolidated parquet path (for quick samples/tests)
     with st.sidebar:
         st.markdown("### Data source")
         cons_default = st.session_state.get('consolidated_parquet_path', 'Flights/flights_to_label.parquet')
         cons_path = st.text_input("Consolidated parquet path", value=cons_default, help="Path to Flights/flights_to_label.parquet or a sample like Flights/flights_to_label_5.parquet")
         st.session_state.consolidated_parquet_path = cons_path
-    # --- Load existing labeled parquet (optional) ---
+
     with st.expander("Load existing labeled parquet", expanded=False):
         st.markdown("### Load existing labeled parquet")
         labeled_path = st.text_input("Path to labeled parquet (leave blank for default)", value="labeled_ground_truth.parquet")
@@ -668,7 +661,7 @@ def main():
     # --- State Initialization ---
     if 'segments' not in st.session_state:
         with st.spinner("Loading and processing flights (consolidated if available)..."):
-            # Prefer consolidated parquet (fast, deterministic). Fallback to Statistics loader.
+
             all_flights = load_flights_from_consolidated(st.session_state.get('consolidated_parquet_path', 'Flights/flights_to_label.parquet'))
             if not all_flights:
                 all_flights = load_all_flights()
