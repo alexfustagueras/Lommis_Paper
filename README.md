@@ -1,8 +1,7 @@
-# Aerodrome Movement Monitoring Using ADS-B Data:  
-## A Case Study at Lommis Airfield
+# Aerodrome Movement Monitoring Using ADS-B Data: 
+A Case Study at Lommis Airfield
 
-### Presented at:
-#### The 13th OpenSky Symposium
+### Presented at: 13th OpenSky Symposium
 
 **Authors:**  
 - Alex Fustagueras ([ORCID 0009-0005-7063-6295](https://orcid.org/0009-0005-7063-6295))  
@@ -26,17 +25,17 @@ The methods and tools here enable detection, quantification, and reporting of ae
 ## Directory Structure
 
 ```
-main.ipynb                   # Main workflow: from raw data to reporting and visualization
+main.ipynb                      # Main workflow: from raw data to reporting and visualization
 model/
-    model_training.ipynb     # Machine learning model training
-    model_evaluation.ipynb   # Quantitative evaluation of trained models
-    labeling_app.py          # Streamlit tool for interactive flight labeling
+    model_training.ipynb        # Machine learning model training
+    model_evaluation.ipynb      # Quantitative evaluation of trained models
+    labeling_app.py             # Streamlit tool for interactive flight labeling
 data/
-    comparison_analysis.ipynb# Compare outputs to reference data
-    dashboard.ipynb          # Missing flights or QC dashboard
-    plots.ipynb              # Additional figures for analysis/paper
-lommis_func.py               # Project-specific functions and utilities
-LICENSE                      # License file
+    comparison_analysis.ipynb   # Compare outputs to reference data
+    dashboard.ipynb             # Missing flights or QC dashboard
+    plots.ipynb                 # Additional figures for analysis/paper
+lommis_func.py                  # Project-specific functions and utilities
+LICENSE                         # License file
 ```
 
 ---
