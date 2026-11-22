@@ -2,7 +2,7 @@
 
 This repository provides the full workflow and code for the OpenSky Symposium paper titled:
 
-> **Aerodrome Movement Monitoring Using ADS-B Data: A Case Study at Lommis Airfield**
+> [**Aerodrome Movement Monitoring Using ADS-B Data: A Case Study at Lommis Airfield**](https://journals.open.tudelft.nl/joas/article/view/8455)
 
 The methods and tools here enable detection, quantification, and reporting of aerodrome movements (departures, arrivals, and traffic circuits) at Lommis Airfield, using ADS-B surveillance data.
 
